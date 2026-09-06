@@ -1,0 +1,27 @@
+{
+  "name": "@nebelus/construction",
+  "version": "0.1.0",
+  "description": "TypeScript client for the Nebelus Construction API — build, edit, test and (with opt-in) deploy AI agents in code.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "src", "README.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "gen:types": "openapi-typescript https://api.nebelus.ai/api/construction/schema/ -o src/schema.d.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["nebelus", "agents", "ai", "construction", "sdk"],
+  "engines": { "node": ">=18" },
+  "devDependencies": {
+    "openapi-typescript": "^7.0.0",
+    "typescript": "^5.4.0"
+  }
+}

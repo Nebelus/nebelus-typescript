@@ -1,0 +1,32 @@
+name: publish
+
+# Publish @nebelus/construction to npm on a GitHub Release (mirrors the nebelus-python
+# release flow). Requires ONE-TIME npm-side setup by a maintainer, either:
+#   (a) npm Trusted Publishing (OIDC) — configure the package's trusted publisher on
+#       npmjs.com to this repo+workflow, then no secret is needed; or
+#   (b) an NPM_TOKEN repo secret (Settings → Secrets → Actions) with publish rights.
+# Until one of those is set, this workflow no-ops the publish step safely.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write   # for npm Trusted Publishing (OIDC)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+      - run: npm ci || npm install
+      - run: npm run build
+      - name: Publish
+        run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
