@@ -1,11 +1,9 @@
 name: publish
 
-# Publish @nebelus/construction to npm on a GitHub Release (mirrors the nebelus-python
-# release flow). Requires ONE-TIME npm-side setup by a maintainer, either:
-#   (a) npm Trusted Publishing (OIDC) — configure the package's trusted publisher on
-#       npmjs.com to this repo+workflow, then no secret is needed; or
-#   (b) an NPM_TOKEN repo secret (Settings → Secrets → Actions) with publish rights.
-# Until one of those is set, this workflow no-ops the publish step safely.
+# Publish @nebelus/construction to npm on a GitHub Release, via npm Trusted
+# Publishing (OIDC) — no NPM_TOKEN needed. The package's trusted publisher is
+# configured on npmjs.com to this repo + this workflow. Requires npm >= 11.5.1
+# (installed below) and id-token: write (granted below).
 
 on:
   release:
@@ -22,11 +20,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           registry-url: "https://registry.npmjs.org"
+      - name: Upgrade npm (Trusted Publishing / OIDC needs >= 11.5.1)
+        run: npm install -g npm@latest
       - run: npm ci || npm install
       - run: npm run build
-      - name: Publish
+      - name: Publish (Trusted Publishing via OIDC — no token)
         run: npm publish --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
