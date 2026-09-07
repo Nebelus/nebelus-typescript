@@ -21,7 +21,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-          registry-url: "https://registry.npmjs.org"
+          # No registry-url: it writes a placeholder authToken into .npmrc that makes
+          # npm attempt token auth and short-circuit the OIDC (Trusted Publishing)
+          # exchange. npm defaults to registry.npmjs.org anyway.
       - name: Upgrade npm (Trusted Publishing / OIDC needs >= 11.5.1)
         run: npm install -g npm@latest
       - run: npm ci || npm install
