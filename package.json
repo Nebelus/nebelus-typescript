@@ -19,6 +19,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "gen:types": "openapi-typescript https://api.nebelus.ai/api/construction/schema/ -o src/schema.d.ts",
+    "parity": "node scripts/check-operation-parity.mjs",
     "prepublishOnly": "npm run build"
   },
   "keywords": ["nebelus", "agents", "ai", "construction", "sdk"],
