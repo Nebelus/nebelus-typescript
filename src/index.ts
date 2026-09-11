@@ -118,6 +118,72 @@ export class NebelusConstruction {
 
   /** Publish a draft to active. Requires api.construction.deploy + the org's opt-in. */
   deploy(id: string) { return this.call<unknown>("POST", `/agents/${id}/deploy/`); }
+
+  // --- lifecycle ---
+  archiveAgent(id: string) { return this.call<{ id: string; status: string }>("POST", `/agents/${id}/archive/`); }
+  unarchiveAgent(id: string) { return this.call<{ id: string; status: string }>("DELETE", `/agents/${id}/archive/`); }
+
+  // --- guardrails / governance on an agent ---
+  setPolicies(id: string, policyIds: string[], mode = "replace") { return this.call<unknown>("POST", `/agents/${id}/policies/`, { policy_ids: policyIds, mode }); }
+  setGroundingTrace(id: string, opts: Record<string, unknown> = {}) { return this.call<unknown>("POST", `/agents/${id}/grounding-trace/`, opts); }
+  setTriggers(id: string, usedTriggers: unknown[]) { return this.call<unknown>("PUT", `/agents/${id}/triggers/`, { used_triggers: usedTriggers }); }
+
+  // --- workflow graph ---
+  getGraph(id: string) { return this.call<unknown>("GET", `/agents/${id}/graph/`); }
+  graphOp(id: string, op: string, args: Record<string, unknown> = {}) { return this.call<unknown>("POST", `/agents/${id}/graph/`, { op, ...args }); }
+
+  // --- schedules ---
+  listSchedules(id: string) { return this.call<unknown>("GET", `/agents/${id}/schedules/`); }
+  createSchedule(id: string, name: string, instruction: string, cadence: Record<string, unknown> = {}) { return this.call<unknown>("POST", `/agents/${id}/schedules/`, { name, instruction, ...cadence }); }
+  cancelSchedule(id: string, scheduleId: string) { return this.call<unknown>("DELETE", `/agents/${id}/schedules/${scheduleId}/`); }
+
+  // --- sub-agents (the sub-agent's id travels in the body) ---
+  attachSubAgent(id: string, subAgentId: string, opts: { instruction?: string; mode?: string; stream_to_client?: boolean } = {}) { return this.call<unknown>("POST", `/agents/${id}/sub-agents/`, { agent_id: subAgentId, mode: "as_tool", ...opts }); }
+  detachSubAgent(id: string, subAgentId: string) { return this.call<unknown>("DELETE", `/agents/${id}/sub-agents/`, { agent_id: subAgentId }); }
+
+  // --- tools & connectors (id in the path) ---
+  attachAiTool(id: string, toolId: string) { return this.call<unknown>("POST", `/agents/${id}/ai-tools/${toolId}/`); }
+  detachAiTool(id: string, toolId: string) { return this.call<unknown>("DELETE", `/agents/${id}/ai-tools/${toolId}/`); }
+  attachCodeConnector(id: string, connectorId: string) { return this.call<unknown>("POST", `/agents/${id}/code-connectors/${connectorId}/`); }
+  detachCodeConnector(id: string, connectorId: string) { return this.call<unknown>("DELETE", `/agents/${id}/code-connectors/${connectorId}/`); }
+  attachMcpServer(id: string, serverId: string) { return this.call<unknown>("POST", `/agents/${id}/mcp-servers/${serverId}/`); }
+  detachMcpServer(id: string, serverId: string) { return this.call<unknown>("DELETE", `/agents/${id}/mcp-servers/${serverId}/`); }
+  /** Attach a custom API endpoint. Optional auth-by-REFERENCE only (no raw secrets). */
+  attachApiEndpoint(id: string, endpointId: string, auth: Record<string, unknown> = {}) { return this.call<unknown>("POST", `/agents/${id}/api-endpoints/${endpointId}/`, Object.keys(auth).length ? auth : undefined); }
+  detachApiEndpoint(id: string, endpointId: string) { return this.call<unknown>("DELETE", `/agents/${id}/api-endpoints/${endpointId}/`); }
+  attachVectorStore(id: string, storeId: string) { return this.call<unknown>("POST", `/agents/${id}/vector-stores/${storeId}/`); }
+  detachVectorStore(id: string, storeId: string) { return this.call<unknown>("DELETE", `/agents/${id}/vector-stores/${storeId}/`); }
+
+  // --- knowledge bases ---
+  vectorStores(query?: string) { return this.call<{ results: unknown[] }>("GET", `/vector-stores/${query ? `?query=${encodeURIComponent(query)}` : ""}`); }
+  createVectorStore(name: string, metadata?: Record<string, unknown>) { return this.call<unknown>("POST", "/vector-stores/", { name, metadata }); }
+  updateVectorStore(storeId: string, fields: { name?: string; metadata?: Record<string, unknown> }) { return this.call<unknown>("PATCH", `/vector-stores/${storeId}/`, fields); }
+  deleteVectorStore(storeId: string, force = false) { return this.call<unknown>("DELETE", `/vector-stores/${storeId}/${force ? "?force=true" : ""}`); }
+  ingestFile(storeId: string, fileId: string) { return this.call<unknown>("POST", `/vector-stores/${storeId}/ingest/`, { file_id: fileId }); }
+
+  // --- custom API endpoints (outbound tool endpoints) ---
+  apiEndpoints(query?: string) { return this.call<{ results: unknown[] }>("GET", `/api-endpoints/${query ? `?query=${encodeURIComponent(query)}` : ""}`); }
+  createApiEndpoint(fields: Record<string, unknown>) { return this.call<unknown>("POST", "/api-endpoints/", fields); }
+  updateApiEndpoint(endpointId: string, fields: Record<string, unknown>) { return this.call<unknown>("PATCH", `/api-endpoints/${endpointId}/`, fields); }
+  testApiEndpoint(endpointId: string, testParameters?: Record<string, unknown>) { return this.call<unknown>("POST", `/api-endpoints/${endpointId}/test/`, { test_parameters: testParameters }); }
+
+  // --- MCP servers ---
+  mcpServers(query?: string) { return this.call<{ results: unknown[] }>("GET", `/mcp-servers/${query ? `?query=${encodeURIComponent(query)}` : ""}`); }
+  createMcpServer(fields: Record<string, unknown>) { return this.call<unknown>("POST", "/mcp-servers/", fields); }
+  updateMcpServer(serverId: string, fields: Record<string, unknown>) { return this.call<unknown>("PATCH", `/mcp-servers/${serverId}/`, fields); }
+  probeMcpServer(fields: Record<string, unknown> = {}) { return this.call<unknown>("POST", "/mcp-servers/probe/", fields); }
+
+  // --- deployments ---
+  deployments() { return this.call<unknown>("GET", "/deployments/"); }
+  createDeployment(agentId: string, deploymentType: string, name: string, extra: Record<string, unknown> = {}) { return this.call<unknown>("POST", "/deployments/", { agent_id: agentId, deployment_type: deploymentType, name, ...extra }); }
+  updateDeployment(deploymentId: string, fields: { name?: string; description?: string; config_patch?: Record<string, unknown> }) { return this.call<unknown>("PATCH", `/deployments/${deploymentId}/`, fields); }
+  activateDeployment(deploymentId: string, active = true) { return this.call<unknown>("POST", `/deployments/${deploymentId}/activate/`, { active }); }
+  probeDeployment(deploymentId: string) { return this.call<unknown>("GET", `/deployments/${deploymentId}/probe/`); }
+
+  // --- governance policies ---
+  policies() { return this.call<{ results: unknown[] }>("GET", "/policies/"); }
+  createPolicy(fields: Record<string, unknown>) { return this.call<unknown>("POST", "/policies/", fields); }
+  activatePolicy(policyId: string, active = true) { return this.call<unknown>("POST", `/policies/${policyId}/activate/`, { active }); }
 }
 
 export default NebelusConstruction;

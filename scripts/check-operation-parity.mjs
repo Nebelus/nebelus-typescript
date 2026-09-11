@@ -20,15 +20,7 @@ const COVERED = new Set([
   `GET ${B}agents/`, `GET ${B}agents/{agent_id}/`, `POST ${B}agents/`, `PATCH ${B}agents/{agent_id}/`,
   `POST ${B}agents/build/`, `POST ${B}agents/{agent_id}/validate/`, `POST ${B}agents/{agent_id}/probe/`,
   `GET ${B}agents/{agent_id}/wiring/`, `POST ${B}agents/{agent_id}/deploy/`, `GET ${B}describe/`, `GET ${B}catalog/`,
-]);
-
-// Deliberately not a client method.
-const INTENTIONAL = new Set([
-  `POST ${B}mcp/`, // the MCP JSON-RPC facade — a transport, not a REST operation
-]);
-
-// Not yet exposed by the TS client — the debt. GOAL: empty. Shrink by adding the method.
-const GAP_LEDGER = new Set([
+  // Full-parity additions (ledger closed):
   `POST ${B}agents/{agent_id}/archive/`, `DELETE ${B}agents/{agent_id}/archive/`,
   `POST ${B}agents/{agent_id}/policies/`, `POST ${B}agents/{agent_id}/grounding-trace/`,
   `PUT ${B}agents/{agent_id}/triggers/`, `GET ${B}agents/{agent_id}/graph/`, `POST ${B}agents/{agent_id}/graph/`,
@@ -40,8 +32,8 @@ const GAP_LEDGER = new Set([
   `POST ${B}agents/{agent_id}/mcp-servers/{server_id}/`, `DELETE ${B}agents/{agent_id}/mcp-servers/{server_id}/`,
   `POST ${B}agents/{agent_id}/api-endpoints/{endpoint_id}/`, `DELETE ${B}agents/{agent_id}/api-endpoints/{endpoint_id}/`,
   `POST ${B}agents/{agent_id}/vector-stores/{store_id}/`, `DELETE ${B}agents/{agent_id}/vector-stores/{store_id}/`,
-  `GET ${B}vector-stores/`, `POST ${B}vector-stores/`, `DELETE ${B}vector-stores/{store_id}/`,
-  `PATCH ${B}vector-stores/{store_id}/`, `POST ${B}vector-stores/{store_id}/ingest/`,
+  `GET ${B}vector-stores/`, `POST ${B}vector-stores/`, `PATCH ${B}vector-stores/{store_id}/`,
+  `DELETE ${B}vector-stores/{store_id}/`, `POST ${B}vector-stores/{store_id}/ingest/`,
   `GET ${B}api-endpoints/`, `POST ${B}api-endpoints/`, `PATCH ${B}api-endpoints/{endpoint_id}/`,
   `POST ${B}api-endpoints/{endpoint_id}/test/`,
   `GET ${B}mcp-servers/`, `POST ${B}mcp-servers/`, `PATCH ${B}mcp-servers/{server_id}/`, `POST ${B}mcp-servers/probe/`,
@@ -49,6 +41,14 @@ const GAP_LEDGER = new Set([
   `POST ${B}deployments/{deployment_id}/activate/`, `GET ${B}deployments/{deployment_id}/probe/`,
   `GET ${B}policies/`, `POST ${B}policies/`, `POST ${B}policies/{policy_id}/activate/`,
 ]);
+
+// Deliberately not a client method.
+const INTENTIONAL = new Set([
+  `POST ${B}mcp/`, // the MCP JSON-RPC facade — a transport, not a REST operation
+]);
+
+// Not yet exposed by the TS client — the debt. GOAL: empty. Shrink by adding the method.
+const GAP_LEDGER = new Set([]); // EMPTY — full parity (2026-09-11)
 
 async function fetchOps() {
   const res = await fetch(SCHEMA_URL, {
