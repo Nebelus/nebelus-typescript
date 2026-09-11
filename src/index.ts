@@ -42,6 +42,18 @@ export interface Wiring {
   [k: string]: unknown;
 }
 
+/** Result of an AI-assisted build (`buildAgent`). */
+export interface BuildResult {
+  built: boolean;
+  agent: Agent | null;
+  agents: Agent[];
+  notes: string;
+  status: string;
+  run_id: string;
+  thread_id: string;
+  [k: string]: unknown;
+}
+
 export class NebelusError extends Error {
   constructor(message: string, readonly status: number, readonly body: unknown) {
     super(message);
@@ -89,6 +101,12 @@ export class NebelusConstruction {
   getAgent(id: string) { return this.call<Agent>("GET", `/agents/${id}/`); }
   /** Create a DRAFT agent. */
   createAgent(fields: Partial<Agent> & { name: string }) { return this.call<Agent>("POST", "/agents/", fields); }
+  /** AI-assisted build: describe an agent in plain language and the Nebelus Vibe Builder
+   *  builds it as a DRAFT (returned with the builder's assumptions). Billed as AI credits
+   *  at the build rate. The one SYNTHESISING call — createAgent et al. are deterministic. */
+  buildAgent(prompt: string, constraints?: string) {
+    return this.call<BuildResult>("POST", "/agents/build/", constraints ? { prompt, constraints } : { prompt });
+  }
   updateAgent(id: string, fields: Partial<Agent>) { return this.call<Agent>("PATCH", `/agents/${id}/`, fields); }
 
   validate(id: string) { return this.call<unknown>("POST", `/agents/${id}/validate/`); }

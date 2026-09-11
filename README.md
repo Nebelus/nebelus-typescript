@@ -23,7 +23,11 @@ const nb = new NebelusConstruction({
 // Discover what this org can build (capability registry + Build Envelope)
 const surface = await nb.describe();
 
-// Build a draft
+// AI-assisted build: describe it and the Vibe Builder builds the draft for you
+const built = await nb.buildAgent("a support agent that answers from our return policy and escalates ambiguous cases");
+// built.agent is the draft; built.notes carries the builder's assumptions
+
+// ...or build a draft deterministically, field by field
 const agent = await nb.createAgent({ name: "Support bot", model_id: "openai/gpt-4o-mini" });
 await nb.updateAgent(agent.id, { system_message: "You are a concise support agent." });
 
