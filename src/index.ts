@@ -17,7 +17,16 @@ export interface NebelusClientOptions {
   /** Region base URL. EU: https://api.nebelus.ai (default). KSA: https://api.ksa.nebelus.ai */
   baseUrl?: string;
   fetch?: typeof fetch;
+  /** Default per-request timeout in ms for normal ops (default 120_000). AI-assisted
+   *  ops (buildAgent, probe) use a longer budget — see AI_TIMEOUT_MS. */
+  timeoutMs?: number;
 }
+
+/** Normal ops return fast. */
+const DEFAULT_TIMEOUT_MS = 120_000;
+/** The Agent Builder / probe run a model server-side and can take minutes — 10 min
+ *  (the edge allows up to 30). */
+const AI_TIMEOUT_MS = 600_000;
 
 export interface Agent {
   id: string;
@@ -65,22 +74,34 @@ export class NebelusConstruction {
   private readonly base: string;
   private readonly apiKey: string;
   private readonly _fetch: typeof fetch;
+  private readonly timeoutMs: number;
 
   constructor(opts: NebelusClientOptions) {
     this.apiKey = opts.apiKey;
     this.base = (opts.baseUrl ?? "https://api.nebelus.ai").replace(/\/$/, "");
     this._fetch = opts.fetch ?? fetch;
+    this.timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   }
 
-  private async call<T>(method: string, path: string, body?: unknown): Promise<T> {
-    const res = await this._fetch(`${this.base}/api/v1/construction${path}`, {
-      method,
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: body === undefined ? undefined : JSON.stringify(body),
-    });
+  private async call<T>(method: string, path: string, body?: unknown, timeoutMs?: number): Promise<T> {
+    // Abort the request if the server hasn't responded in time — otherwise a long
+    // AI build could hang past the runtime's own (e.g. undici 300s) default.
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), timeoutMs ?? this.timeoutMs);
+    let res: Response;
+    try {
+      res = await this._fetch(`${this.base}/api/v1/construction${path}`, {
+        method,
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: body === undefined ? undefined : JSON.stringify(body),
+        signal: ac.signal,
+      });
+    } finally {
+      clearTimeout(timer);
+    }
     const text = await res.text();
     const data = text ? JSON.parse(text) : null;
     if (!res.ok) {
@@ -105,13 +126,13 @@ export class NebelusConstruction {
    *  builds it as a DRAFT (returned with the builder's assumptions). Billed as AI credits
    *  at the build rate. The one SYNTHESISING call — createAgent et al. are deterministic. */
   buildAgent(prompt: string, constraints?: string) {
-    return this.call<BuildResult>("POST", "/agents/build/", constraints ? { prompt, constraints } : { prompt });
+    return this.call<BuildResult>("POST", "/agents/build/", constraints ? { prompt, constraints } : { prompt }, AI_TIMEOUT_MS);
   }
   updateAgent(id: string, fields: Partial<Agent>) { return this.call<Agent>("PATCH", `/agents/${id}/`, fields); }
 
   validate(id: string) { return this.call<unknown>("POST", `/agents/${id}/validate/`); }
-  /** Run a test message against a draft (billed). */
-  probe(id: string, message: string) { return this.call<unknown>("POST", `/agents/${id}/probe/`, { message }); }
+  /** Run a test message against a draft (billed). Runs a model — longer budget. */
+  probe(id: string, message: string) { return this.call<unknown>("POST", `/agents/${id}/probe/`, { message }, AI_TIMEOUT_MS); }
 
   /** REST/WebSocket/webhook/embed/MCP wiring for an agent, region-correct. */
   wiring(id: string) { return this.call<Wiring>("GET", `/agents/${id}/wiring/`); }
