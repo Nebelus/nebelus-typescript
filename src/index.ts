@@ -184,6 +184,13 @@ export class NebelusConstruction {
   policies() { return this.call<{ results: unknown[] }>("GET", "/policies/"); }
   createPolicy(fields: Record<string, unknown>) { return this.call<unknown>("POST", "/policies/", fields); }
   activatePolicy(policyId: string, active = true) { return this.call<unknown>("POST", `/policies/${policyId}/activate/`, { active }); }
+
+  // --- API keys (mint from code; the deploy scope needs the org's opt-in) ---
+  apiKeys() { return this.call<{ results: unknown[] }>("GET", "/api-keys/"); }
+  /** Mint an API key — the full value is in the response ONCE (`sensitive_id`). */
+  createApiKey(scopes: string[], name?: string, isServiceAccount = false) {
+    return this.call<Record<string, unknown>>("POST", "/api-keys/", { scopes, name, is_service_account: isServiceAccount });
+  }
 }
 
 export default NebelusConstruction;

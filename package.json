@@ -1,6 +1,6 @@
 {
   "name": "@nebelus/construction",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "TypeScript client for the Nebelus Construction API — build, edit, test and (with opt-in) deploy AI agents in code.",
   "license": "UNLICENSED",
   "repository": { "type": "git", "url": "git+https://github.com/Nebelus/nebelus-typescript.git" },
