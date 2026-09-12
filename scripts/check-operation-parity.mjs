@@ -40,6 +40,7 @@ const COVERED = new Set([
   `GET ${B}deployments/`, `POST ${B}deployments/`, `PATCH ${B}deployments/{deployment_id}/`,
   `POST ${B}deployments/{deployment_id}/activate/`, `GET ${B}deployments/{deployment_id}/probe/`,
   `GET ${B}policies/`, `POST ${B}policies/`, `POST ${B}policies/{policy_id}/activate/`,
+  `GET ${B}api-keys/`, `POST ${B}api-keys/`,  // apiKeys() / createApiKey() (Phase 5)
 ]);
 
 // Deliberately not a client method.
